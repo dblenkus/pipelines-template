@@ -25,6 +25,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.staticfiles',
 
+    'channels',
     'rest_framework',
     'guardian',
     'mathfilters',
@@ -39,6 +40,8 @@ INSTALLED_APPS = (
 
     'pipelines_template',
 )
+
+TEST_RUNNER = 'resolwe.test_helpers.test_runner.ResolweRunner'
 
 TEMPLATES = [
     {
@@ -80,13 +83,21 @@ DATABASES = {
 
 STATIC_URL = '/static/'
 
+REDIS_CONNECTION = {
+    'host': 'localhost',
+    'port': int(os.environ.get('PIPELINES_TEMPLATE_REDIS_PORT', 57000)),
+    'db': int(os.environ.get('PIPELINES_TEMPLATE_REDIS_DATABASE', 0)),
+}
+
 FLOW_EXECUTOR = {
     'NAME': 'resolwe.flow.executors.docker',
     # XXX: Change to a stable resolwe image when it will include all the required tools
     'CONTAINER_IMAGE': 'resolwe/base',
     'CONTAINER_NAME_PREFIX': 'example',
+    'REDIS_CONNECTION': REDIS_CONNECTION,
     'DATA_DIR': os.path.join(PROJECT_ROOT, 'test_data'),
     'UPLOAD_DIR': os.path.join(PROJECT_ROOT, 'test_upload'),
+    'RUNTIME_DIR': os.path.join(PROJECT_ROOT, 'test_runtime'),
 }
 # Set custom executor command if set via environment variable
 if 'PIPELINES_TEMPLATE_DOCKER_COMMAND' in os.environ:
@@ -103,6 +114,12 @@ FLOW_EXECUTION_ENGINES = [
     'resolwe.flow.execution_engines.bash',
     'resolwe.flow.execution_engines.workflow',
 ]
+
+FLOW_MANAGER = {
+    'NAME': 'resolwe.flow.managers.local',
+    'REDIS_PREFIX': 'pipelines-template.manager',
+    'REDIS_CONNECTION': REDIS_CONNECTION,
+}
 
 # NOTE: Since FLOW_EXECUTOR['DATA_DIR'] and FLOW_EXECUTOR['UPLOAD_DIR'] are
 # shared among all containers they must use the shared SELinux label (z
@@ -134,3 +151,16 @@ FLOW_PROCESSES_FINDERS = (
     'resolwe.flow.finders.FileSystemProcessesFinder',
     'resolwe.flow.finders.AppDirectoriesFinder',
 )
+
+# Channels.
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'asgi_redis.RedisChannelLayer',
+        'ROUTING': 'tests.routing.channel_routing',
+        'CONFIG': {
+            'hosts': [(REDIS_CONNECTION['host'], REDIS_CONNECTION['port'])],
+            'expiry': 3600,
+        },
+    },
+}

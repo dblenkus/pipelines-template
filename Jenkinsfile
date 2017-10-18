@@ -17,6 +17,7 @@ throttle(["pipelines_template"]) {
                          "PIPELINES_TEMPLATE_POSTGRESQL_PORT=55460",
                          // set database name to a unique value
                          "PIPELINES_TEMPLATE_POSTGRESQL_NAME=${env.BUILD_TAG}",
+                         "PIPELINES_TEMPLATE_REDIS_PORT=57000",
                          "PIPELINES_TEMPLATE_DOCKER_COMMAND=sudo docker",
                          // set number of parallel Django test processes to 2
                          "DJANGO_TEST_PROCESSES=2",

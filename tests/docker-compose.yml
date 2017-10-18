@@ -8,3 +8,7 @@ postgresql:
         POSTGRES_DB: example
     ports:
         - "55470:5432"
+redis:
+    image: redis:3.2
+    ports:
+        - "57000:6379"
