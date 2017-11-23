@@ -5,6 +5,14 @@ throttle(["pipelines_template"]) {
         // long paths of Jenkins' workspaces, we need to set a shorter Tox's working directory path
         // More info: http://tox.readthedocs.io/en/latest/example/jenkins.html#avoiding-the-path-too-long-error-with-long-shebang-lines
         def tox_workdir = "${env.HOME}/.tox-${env.BUILD_TAG}"
+        // extra arguments passed to Tox
+        def tox_extra_args = ""
+        if (env.BRANCH_NAME && env.BRANCH_NAME == "master" ||
+            env.CHANGE_TARGET && env.CHANGE_TARGET == "master") {
+            // NOTE: If we are building the "master" branch or a pull request against the "master"
+            // branch, we allow installing pre-releases with the pip command.
+            tox_extra_args += "--pre"
+        }
 
         try {
             stage("Checkout") {
@@ -25,16 +33,16 @@ throttle(["pipelines_template"]) {
                     // documentation, linters, packaging and extra environments are run first so
                     // that if any of them fails, developer will get the feedback right away
                     // (rather than having to wait for all ordinary tests to run)
-                    sh "tox -e docs"
+                    sh "tox -e docs ${tox_extra_args}"
 
-                    sh "tox -e linters"
+                    sh "tox -e linters ${tox_extra_args}"
 
-                    sh "tox -e packaging"
+                    sh "tox -e packaging ${tox_extra_args}"
 
-                    sh "tox -e extra"
+                    sh "tox -e extra ${tox_extra_args}"
 
                     sh "echo 'Environment:' && python3.4 --version"
-                    sh "tox -e py34"
+                    sh "tox -e py34 ${tox_extra_args}"
                 }
             }
 
